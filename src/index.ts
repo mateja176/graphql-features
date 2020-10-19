@@ -12,6 +12,8 @@ import {
   GraphQLInputFieldConfigMap,
   GraphQLInputObjectType,
   GraphQLInputType,
+  GraphQLInt,
+  GraphQLList,
   GraphQLNonNull,
   GraphQLObjectType,
   GraphQLObjectTypeConfig,
@@ -92,6 +94,13 @@ const config = Object.values(schema.getTypeMap())
             [queryName]: {
               type: outputType,
               args: { [idName]: { type: nonNullIdType } },
+            },
+            [`${queryName}s`]: {
+              type: new GraphQLNonNull(new GraphQLList(outputType)),
+              args: {
+                limit: { type: GraphQLInt },
+                offset: { type: GraphQLInt },
+              },
             },
           },
         },
