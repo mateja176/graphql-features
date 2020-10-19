@@ -1,48 +1,83 @@
 #! /usr/bin/env node
 
+/* eslint-disable no-console */
+
 // import commander from 'commander';
-import { codegen } from '@graphql-codegen/core';
-import * as typescriptPlugin from '@graphql-codegen/typescript';
-import * as fs from 'fs-extra';
-import { buildSchema, GraphQLSchema, parse, printSchema } from 'graphql';
-import { join } from 'path';
+// import * as fs from 'fs-extra';
+// import { join } from 'path';
+import {
+  buildSchema,
+  GraphQLID,
+  GraphQLInputType,
+  GraphQLObjectType,
+  GraphQLObjectTypeConfig,
+  GraphQLOutputType,
+  GraphQLSchema,
+  isScalarType,
+  printSchema,
+} from 'graphql';
 
 // const { types } = commander
 //   .option('-t, --types', 'Path to directory containing graphql types', '.')
 //   .option('-s, --schema', 'Output path of generated schema', '.')
 //   .parse(process.argv);
 
-const schema: GraphQLSchema = buildSchema(`
-  type User {
-    name: String!
-    age: Int!
-  }
-`);
+const schemaString = `
+type User {
+  id: ID!
+  name: String!
+  age: Int!
+}
+`;
 
-const outputFile = 'output.ts';
+const schema = buildSchema(schemaString);
 
-const options: Parameters<typeof codegen>[0] = {
-  config: {},
-  documents: [],
-  // used by a plugin internally, although the 'typescript' plugin currently
-  // returns the string output, rather than writing to a file
-  filename: outputFile,
-  schema: parse(printSchema(schema)),
-  plugins: [
-    // Each plugin should be an object
-    {
-      typescript: {}, // Here you can pass configuration to the plugin
-    },
-  ],
-  pluginMap: {
-    typescript: typescriptPlugin,
-  },
+type Config = {
+  query: GraphQLObjectTypeConfig<unknown, unknown>;
+  mutation: GraphQLObjectTypeConfig<unknown, unknown>;
 };
 
-(async () => {
-  const output = await codegen(options);
+// TODO filter out custom types
+const config = Object.values(schema.getTypeMap())
+  .filter((type) => !isScalarType(type) && !type.name.startsWith('__'))
+  .reduce<Config>(
+    ({ query, mutation }, type) => {
+      const outputType = type as GraphQLOutputType;
+      const inputType = type as GraphQLInputType;
+      return {
+        query: {
+          ...query,
+          fields: {
+            ...query.fields,
+            [type.name.toLowerCase()]: {
+              type: outputType,
+              args: { id: { type: GraphQLID } },
+            },
+          },
+        },
+        mutation: {
+          ...mutation,
+          fields: {
+            ...mutation.fields,
+            [`create${type.name}`]: {
+              type: outputType,
+              args: { input: { type: inputType } },
+            },
+          },
+        },
+      };
+    },
+    {
+      query: { name: 'Query', fields: {} },
+      mutation: { name: 'Mutation', fields: {} },
+    } as Config,
+  );
 
-  fs.writeFile(join(__dirname, outputFile), output, () => {
-    console.log('Outputs generated!'); // eslint-disable-line no-console
-  });
-})();
+console.log(
+  printSchema(
+    new GraphQLSchema({
+      query: new GraphQLObjectType(config.query),
+      mutation: new GraphQLObjectType(config.mutation),
+    }),
+  ),
+);
