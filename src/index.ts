@@ -37,7 +37,6 @@ type Config = {
   mutation: GraphQLObjectTypeConfig<unknown, unknown>;
 };
 
-// TODO filter out custom types
 const config = Object.values(schema.getTypeMap())
   .filter((type) => !isScalarType(type) && !type.name.startsWith('__'))
   .reduce<Config>(
