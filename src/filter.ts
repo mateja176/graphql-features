@@ -57,30 +57,36 @@ export type StringFilter = {
 
 export type Filter = BooleanFilter | NumberFilter | StringFilter;
 
-export type Filters<Index extends string> = {
-  [key in Index]?: Filter;
+export type Filters<O extends Record<string, unknown>> = {
+  [key in keyof O]?: O[key] extends boolean
+    ? BooleanFilter
+    : O[key] extends number
+    ? NumberFilter
+    : O[key] extends string
+    ? StringFilter
+    : never;
 };
 
-export type AndFilter<Index extends string> = {
-  and: Array<Filters<Index> | OrFilter<Index>>;
+export type AndFilter<O extends Record<string, unknown>> = {
+  and: Array<Filters<O> | OrFilter<O>>;
 };
 
-export type OrFilter<Index extends string> = {
-  or: Array<Filters<Index> | AndFilter<Index>>;
+export type OrFilter<O extends Record<string, unknown>> = {
+  or: Array<Filters<O> | AndFilter<O>>;
 };
 
-export type CompositeFilter<Index extends string> =
-  | AndFilter<Index>
-  | OrFilter<Index>;
+export type CompositeFilter<O extends Record<string, unknown>> =
+  | AndFilter<O>
+  | OrFilter<O>;
 
-interface Test {
+type Test = {
   id: string;
   available: boolean;
   promo: boolean;
   price: number;
-}
+};
 
-export const example: CompositeFilter<keyof Test> = {
+export const example: CompositeFilter<Test> = {
   and: [
     { available: { equality: { eq: true } } },
     { id: { equality: { eq: 'XXXXX' } } },
