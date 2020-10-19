@@ -49,6 +49,8 @@ const config = Object.values(schema.getTypeMap())
       const outputType = type as GraphQLOutputType;
       const inputType = type as GraphQLInputType;
 
+      const nonNullIdType = new GraphQLNonNull(GraphQLID);
+
       const fieldConfigMap = (type as GraphQLObjectType).toConfig().fields;
 
       const fieldConfigPairs = Object.entries(fieldConfigMap);
@@ -67,7 +69,7 @@ const config = Object.values(schema.getTypeMap())
       const updateInputType = new GraphQLInputObjectType({
         name: `Update${type.name}Input`,
         fields: {
-          [idName]: { type: new GraphQLNonNull(GraphQLID) },
+          [idName]: { type: nonNullIdType },
           ...fieldConfigPairsWithoutId.reduce(
             (map, [name, config]) => ({
               ...map,
@@ -86,7 +88,7 @@ const config = Object.values(schema.getTypeMap())
             ...query.fields,
             [type.name.toLowerCase()]: {
               type: outputType,
-              args: { [idName]: { type: new GraphQLNonNull(GraphQLID) } },
+              args: { [idName]: { type: nonNullIdType } },
             },
           },
         },
@@ -102,6 +104,12 @@ const config = Object.values(schema.getTypeMap())
               type: outputType,
               args: {
                 input: { type: updateInputType },
+              },
+            },
+            [`delete${type.name}`]: {
+              type: outputType,
+              args: {
+                [idName]: { type: nonNullIdType },
               },
             },
           },
