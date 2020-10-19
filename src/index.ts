@@ -46,8 +46,10 @@ const config = Object.values(schema.getTypeMap())
   .filter((type) => !isScalarType(type) && !type.name.startsWith('__'))
   .reduce<Config>(
     ({ query, mutation }, type) => {
-      const outputType = type as GraphQLOutputType;
-      const inputType = type as GraphQLInputType;
+      const outputType = new GraphQLNonNull(type as GraphQLOutputType);
+      const inputType = new GraphQLNonNull(type as GraphQLInputType);
+
+      const queryName = type.name.toLowerCase();
 
       const nonNullIdType = new GraphQLNonNull(GraphQLID);
 
@@ -61,7 +63,7 @@ const config = Object.values(schema.getTypeMap())
       if (!idConfigPair) {
         throw new Error(`Type ${type.name} does not have field of type ID`);
       }
-      const [idName, idConfig] = idConfigPair;
+      const [idName] = idConfigPair;
       const fieldConfigPairsWithoutId = fieldConfigPairs.filter(
         ([, config]) => !isIdField(config),
       );
@@ -81,12 +83,13 @@ const config = Object.values(schema.getTypeMap())
           ),
         },
       });
+
       return {
         query: {
           ...query,
           fields: {
             ...query.fields,
-            [type.name.toLowerCase()]: {
+            [queryName]: {
               type: outputType,
               args: { [idName]: { type: nonNullIdType } },
             },
@@ -98,7 +101,7 @@ const config = Object.values(schema.getTypeMap())
             ...mutation.fields,
             [`create${type.name}`]: {
               type: outputType,
-              args: { input: { type: new GraphQLNonNull(inputType) } },
+              args: { input: { type: inputType } },
             },
             [`update${type.name}`]: {
               type: outputType,
