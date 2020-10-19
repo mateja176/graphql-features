@@ -9,6 +9,7 @@ import {
   buildSchema,
   GraphQLID,
   GraphQLInputType,
+  GraphQLNonNull,
   GraphQLObjectType,
   GraphQLObjectTypeConfig,
   GraphQLOutputType,
@@ -50,7 +51,7 @@ const config = Object.values(schema.getTypeMap())
             ...query.fields,
             [type.name.toLowerCase()]: {
               type: outputType,
-              args: { id: { type: GraphQLID } },
+              args: { id: { type: new GraphQLNonNull(GraphQLID) } },
             },
           },
         },
@@ -60,7 +61,7 @@ const config = Object.values(schema.getTypeMap())
             ...mutation.fields,
             [`create${type.name}`]: {
               type: outputType,
-              args: { input: { type: inputType } },
+              args: { input: { type: new GraphQLNonNull(inputType) } },
             },
           },
         },
