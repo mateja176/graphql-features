@@ -55,6 +55,8 @@ export type StringFilter = {
   beginsWith?: string;
 };
 
+// TODO since GraphQL doesn't support generics
+// TODO Filters needs to be unfolded
 export type Filters<O extends Record<string, unknown>> = {
   [key in keyof O]?: O[key] extends boolean
     ? BooleanFilter
