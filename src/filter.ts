@@ -55,8 +55,6 @@ export type StringFilter = {
   beginsWith?: string;
 };
 
-export type Filter = BooleanFilter | NumberFilter | StringFilter;
-
 export type Filters<O extends Record<string, unknown>> = {
   [key in keyof O]?: O[key] extends boolean
     ? BooleanFilter
@@ -75,7 +73,7 @@ export type OrFilter<O extends Record<string, unknown>> = {
   or: Array<Filters<O> | AndFilter<O>>;
 };
 
-export type CompositeFilter<O extends Record<string, unknown>> =
+export type Filter<O extends Record<string, unknown>> =
   | AndFilter<O>
   | OrFilter<O>;
 
@@ -86,7 +84,7 @@ type Test = {
   price: number;
 };
 
-export const example: CompositeFilter<Test> = {
+export const example: Filter<Test> = {
   and: [
     { available: { equality: { eq: true } } },
     { id: { equality: { eq: 'XXXXX' } } },
