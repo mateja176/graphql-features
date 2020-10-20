@@ -59,15 +59,15 @@ const config = Object.values(schema.getTypeMap())
 
       const fieldConfigPairs = Object.entries(fieldConfigMap);
 
-      const idConfigPair = fieldConfigPairs.find(([, config]) =>
-        isIdField(config),
+      const idConfigPair = fieldConfigPairs.find(([, fieldConfig]) =>
+        isIdField(fieldConfig),
       );
       if (!idConfigPair) {
         throw new Error(`Type ${type.name} does not have field of type ID`);
       }
       const [idName] = idConfigPair;
       const fieldConfigPairsWithoutId = fieldConfigPairs.filter(
-        ([, config]) => !isIdField(config),
+        ([, fieldConfig]) => !isIdField(fieldConfig),
       );
 
       const updateInputType = new GraphQLInputObjectType({
@@ -75,10 +75,10 @@ const config = Object.values(schema.getTypeMap())
         fields: {
           [idName]: { type: nonNullIdType },
           ...fieldConfigPairsWithoutId.reduce(
-            (map, [name, config]) => ({
+            (map, [name, fieldConfig]) => ({
               ...map,
               [name]: {
-                type: getNullableType(config.type) as GraphQLInputType,
+                type: getNullableType(fieldConfig.type) as GraphQLInputType,
               },
             }),
             {} as GraphQLInputFieldConfigMap,
