@@ -22,7 +22,7 @@ import {
   isScalarType,
   printSchema,
 } from 'graphql';
-import { isIdField } from './utils';
+import { getFilterType, isIdField } from './utils';
 
 // const { types } = commander
 //   .option('-t, --types', 'Path to directory containing graphql types', '.')
@@ -100,6 +100,7 @@ const config = Object.values(schema.getTypeMap())
               args: {
                 limit: { type: GraphQLInt },
                 offset: { type: GraphQLInt },
+                filter: { type: getFilterType(type.name)(fieldConfigPairs) },
               },
             },
           },
