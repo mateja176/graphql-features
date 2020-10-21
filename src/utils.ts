@@ -6,8 +6,8 @@ import {
   GraphQLFieldConfigMap,
   GraphQLFloat,
   GraphQLID,
+  GraphQLInputType,
   GraphQLInt,
-  GraphQLNamedType,
   GraphQLNonNull,
   GraphQLObjectType,
   GraphQLString,
@@ -112,57 +112,50 @@ const getEqualityFilter = (type: 'String' | 'Int' | 'Float') => {
       ? GraphQLInt
       : GraphQLFloat,
   );
-  return new GraphQLObjectType({
-    name: `${type}Filter`,
-    fields: {
-      equality: {
-        type: new GraphQLUnionType({
-          name: `${type}Equality`,
-          types: [
-            new GraphQLObjectType({
-              name: `${type}Eq`,
-              fields: { eq: { type: scalar } },
-            }),
-            new GraphQLObjectType({
-              name: `${type}Ne`,
-              fields: { ne: { type: scalar } },
-            }),
-            new GraphQLObjectType({
-              name: `${type}Le`,
-              fields: { le: { type: scalar } },
-            }),
-            new GraphQLObjectType({
-              name: `${type}Lt`,
-              fields: { lt: { type: scalar } },
-            }),
-            new GraphQLObjectType({
-              name: `${type}Ge`,
-              fields: { ge: { type: scalar } },
-            }),
-            new GraphQLObjectType({
-              name: `${type}Gt`,
-              fields: { gt: { type: scalar } },
-            }),
-            new GraphQLObjectType({
-              name: `${type}LeGe`,
-              fields: { le: { type: scalar }, ge: { type: scalar } },
-            }),
-            new GraphQLObjectType({
-              name: `${type}LeGt`,
-              fields: { le: { type: scalar }, gt: { type: scalar } },
-            }),
-            new GraphQLObjectType({
-              name: `${type}LtGe`,
-              fields: { lt: { type: scalar }, ge: { type: scalar } },
-            }),
-            new GraphQLObjectType({
-              name: `${type}LtGt`,
-              fields: { lt: { type: scalar }, gt: { type: scalar } },
-            }),
-          ],
-        }),
-      },
-    },
+  return new GraphQLUnionType({
+    name: `${type}Equality`,
+    types: [
+      new GraphQLObjectType({
+        name: `${type}Eq`,
+        fields: { eq: { type: scalar } },
+      }),
+      new GraphQLObjectType({
+        name: `${type}Ne`,
+        fields: { ne: { type: scalar } },
+      }),
+      new GraphQLObjectType({
+        name: `${type}Le`,
+        fields: { le: { type: scalar } },
+      }),
+      new GraphQLObjectType({
+        name: `${type}Lt`,
+        fields: { lt: { type: scalar } },
+      }),
+      new GraphQLObjectType({
+        name: `${type}Ge`,
+        fields: { ge: { type: scalar } },
+      }),
+      new GraphQLObjectType({
+        name: `${type}Gt`,
+        fields: { gt: { type: scalar } },
+      }),
+      new GraphQLObjectType({
+        name: `${type}LeGe`,
+        fields: { le: { type: scalar }, ge: { type: scalar } },
+      }),
+      new GraphQLObjectType({
+        name: `${type}LeGt`,
+        fields: { le: { type: scalar }, gt: { type: scalar } },
+      }),
+      new GraphQLObjectType({
+        name: `${type}LtGe`,
+        fields: { lt: { type: scalar }, ge: { type: scalar } },
+      }),
+      new GraphQLObjectType({
+        name: `${type}LtGt`,
+        fields: { lt: { type: scalar }, gt: { type: scalar } },
+      }),
+    ],
   });
 };
 
@@ -187,7 +180,7 @@ const StringFilter = new GraphQLObjectType({
     beginsWith: { type: GraphQLString },
   },
 });
-const scalars = [
+export const scalars = [
   [GraphQLID, IdFilter],
   [GraphQLBoolean, BooleanFilter],
   [GraphQLInt, IntFilter],
@@ -196,15 +189,19 @@ const scalars = [
 ] as const;
 export const getFilterType = (typeName: string) => (
   fieldConfigPairs: Array<[string, GraphQLFieldConfig<unknown, unknown>]>,
-): GraphQLNamedType => {
-  return new GraphQLObjectType({
+): GraphQLInputType => {
+  return (new GraphQLObjectType({
     name: `${typeName}Filter`,
     fields: fieldConfigPairs
       .map(
         ([key, config]) =>
           [
             key,
-            scalars.find(([scalar]) => isEqualType(scalar, config.type))?.[1],
+            scalars.find(
+              ([scalar]) =>
+                isEqualType(scalar, config.type) ||
+                isEqualType(new GraphQLNonNull(scalar), config.type),
+            )?.[1],
           ] as const,
       )
       .filter((pair): pair is [string, GraphQLObjectType] => {
@@ -214,7 +211,7 @@ export const getFilterType = (typeName: string) => (
         (map, [key, filter]) => ({ ...map, [key]: { type: filter } }),
         {} as GraphQLFieldConfigMap<unknown, unknown>,
       ),
-  });
+  }) as unknown) as GraphQLInputType;
 };
 
 export const isIdField = (
