@@ -6,7 +6,8 @@ import { mergeTypeDefs } from '@graphql-toolkit/schema-merging';
 import commander from 'commander';
 import fs from 'fs-extra';
 import {
-  buildSchema,
+  buildASTSchema,
+  DocumentNode,
   getNullableType,
   GraphQLID,
   GraphQLInputFieldConfigMap,
@@ -19,10 +20,11 @@ import {
   GraphQLOutputType,
   GraphQLSchema,
   isScalarType,
-  print,
+  printSchema,
 } from 'graphql';
 import { join } from 'path';
 import prettier from 'prettier';
+import { pipe } from 'ramda';
 import { Config } from './models';
 import { getFilterType, getSortType, isIdField } from './utils';
 
@@ -33,12 +35,8 @@ const { types, schema } = commander
 
 const typesPath = join(process.cwd(), types);
 
-const generateFeature = async (path: string) => {
-  const schemaString: string = await fs.readFile(join(typesPath, path), {
-    encoding: 'utf-8',
-  });
-
-  const typeSchema = buildSchema(schemaString);
+const generateFeature = async (document: DocumentNode) => {
+  const typeSchema = buildASTSchema(document);
 
   const config = Object.values(typeSchema.getTypeMap())
     .filter((type) => !isScalarType(type) && !type.name.startsWith('__'))
@@ -141,13 +139,22 @@ const generateFeature = async (path: string) => {
 };
 
 fs.readdir(typesPath)
-  .then((paths) => Promise.all(paths.map(generateFeature)))
-  .then((schemaDefinitions) => {
-    const document = mergeTypeDefs(schemaDefinitions);
-
-    const schemaDefinition = prettier.format(print(document), {
+  .then((paths) =>
+    Promise.all(
+      paths.map((path) =>
+        fs.readFile(join(typesPath, path), {
+          encoding: 'utf-8',
+        }),
+      ),
+    ),
+  )
+  .then((models) => {
+    return pipe(mergeTypeDefs, generateFeature)(models);
+  })
+  .then((schemaDefinition) => {
+    const schemaString = printSchema(schemaDefinition);
+    const formattedSchema = prettier.format(schemaString, {
       parser: 'graphql',
     });
-
-    fs.writeFile(join(process.cwd(), schema), schemaDefinition);
+    fs.writeFile(join(process.cwd(), schema), formattedSchema);
   });
