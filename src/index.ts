@@ -21,6 +21,7 @@ import {
   printSchema,
 } from 'graphql';
 import { join } from 'path';
+import prettier from 'prettier';
 import { Config } from './models';
 import { getFilterType, getSortType, isIdField } from './utils';
 
@@ -141,7 +142,15 @@ const generateFeature = async (path: string) => {
 };
 
 fs.readdir(typesPath)
-  .then((paths) => Promise.all(paths.map(generateFeature)))
+  .then((paths) =>
+    Promise.all(
+      paths.map((path) =>
+        generateFeature(path).then((string) =>
+          prettier.format(string, { parser: 'graphql' }),
+        ),
+      ),
+    ),
+  )
   .then((schemaDefinitions) => {
     fs.writeFile(join(process.cwd(), schema), schemaDefinitions[0]);
   });
