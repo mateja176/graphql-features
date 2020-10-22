@@ -7,15 +7,49 @@ import {
   GraphQLFieldConfigMap,
   GraphQLFloat,
   GraphQLID,
+  GraphQLInputFieldConfigMap,
+  GraphQLInputObjectType,
   GraphQLInputType,
   GraphQLInt,
+  GraphQLNamedType,
   GraphQLNonNull,
+  GraphQLNullableType,
   GraphQLObjectType,
+  GraphQLScalarType,
   GraphQLString,
   GraphQLUnionType,
   isEqualType,
+  isScalarType,
 } from 'graphql';
 import { FieldConfigPairs } from './models';
+
+export const isIdField = (
+  config: GraphQLFieldConfig<unknown, unknown>,
+): boolean => isEqualType(new GraphQLNonNull(GraphQLID), config.type);
+
+export const getCreateInputType = (
+  type: GraphQLNamedType,
+): GraphQLScalarType | GraphQLNonNull<GraphQLNullableType> => {
+  if (isScalarType(type)) {
+    return type;
+  } else {
+    const objectType = type as GraphQLObjectType;
+    return new GraphQLNonNull(
+      new GraphQLInputObjectType({
+        name: `${objectType.name}CreateInput`,
+        fields: Object.entries(objectType.toConfig().fields)
+          .filter(([, fieldConfig]) => !isIdField(fieldConfig))
+          .reduce(
+            (map, [key, fieldConfig]) => ({
+              ...map,
+              [key]: { type: fieldConfig.type as GraphQLInputType },
+            }),
+            {} as GraphQLInputFieldConfigMap,
+          ),
+      }),
+    );
+  }
+};
 
 const idFilter = `type IDFilter = {
   equality: { eq: ID! } | { ne: ID! }
@@ -239,7 +273,3 @@ export const getSortType = (typeName: string) => (
     ),
   }) as unknown) as GraphQLInputType;
 };
-
-export const isIdField = (
-  config: GraphQLFieldConfig<unknown, unknown>,
-): boolean => isEqualType(new GraphQLNonNull(GraphQLID), config.type);

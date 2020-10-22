@@ -26,7 +26,12 @@ import { join } from 'path';
 import prettier from 'prettier';
 import { pipe } from 'ramda';
 import { Config } from './models';
-import { getFilterType, getSortType, isIdField } from './utils';
+import {
+  getCreateInputType,
+  getFilterType,
+  getSortType,
+  isIdField,
+} from './utils';
 
 const { types, schema } = commander
   .option('-t, --types <path>', 'Path to directory containing graphql types')
@@ -43,7 +48,6 @@ const generateFeature = async (document: DocumentNode) => {
     .reduce<Config>(
       ({ query, mutation }, type) => {
         const outputType = new GraphQLNonNull(type as GraphQLOutputType);
-        const inputType = new GraphQLNonNull(type as GraphQLInputType);
 
         const queryName = type.name.toLowerCase();
 
@@ -108,7 +112,7 @@ const generateFeature = async (document: DocumentNode) => {
               ...mutation.fields,
               [`create${type.name}`]: {
                 type: outputType,
-                args: { input: { type: inputType } },
+                args: { input: { type: getCreateInputType(type) } },
               },
               [`update${type.name}`]: {
                 type: outputType,
