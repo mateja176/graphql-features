@@ -11,7 +11,6 @@ import {
   GraphQLInputObjectType,
   GraphQLInputType,
   GraphQLInt,
-  GraphQLNamedType,
   GraphQLNonNull,
   GraphQLNullableType,
   GraphQLObjectType,
@@ -19,7 +18,6 @@ import {
   GraphQLString,
   GraphQLUnionType,
   isEqualType,
-  isScalarType,
 } from 'graphql';
 import { FieldConfigPairs } from './models';
 
@@ -27,28 +25,23 @@ export const isIdField = (
   config: GraphQLFieldConfig<unknown, unknown>,
 ): boolean => isEqualType(new GraphQLNonNull(GraphQLID), config.type);
 
-export const getInputType = (name: string) => (
-  type: GraphQLNamedType,
+export const getInputType = (suffix: string) => (
+  type: GraphQLObjectType,
 ): GraphQLScalarType | GraphQLNonNull<GraphQLNullableType> => {
-  if (isScalarType(type)) {
-    return type;
-  } else {
-    const objectType = type as GraphQLObjectType;
-    return new GraphQLNonNull(
-      new GraphQLInputObjectType({
-        name,
-        fields: Object.entries(objectType.toConfig().fields)
-          .filter(([, fieldConfig]) => !isIdField(fieldConfig))
-          .reduce(
-            (map, [key, fieldConfig]) => ({
-              ...map,
-              [key]: { type: fieldConfig.type as GraphQLInputType },
-            }),
-            {} as GraphQLInputFieldConfigMap,
-          ),
-      }),
-    );
-  }
+  return new GraphQLNonNull(
+    new GraphQLInputObjectType({
+      name: `${type.name}${suffix}`,
+      fields: Object.entries(type.toConfig().fields)
+        .filter(([, fieldConfig]) => !isIdField(fieldConfig))
+        .reduce(
+          (map, [key, fieldConfig]) => ({
+            ...map,
+            [key]: { type: fieldConfig.type as GraphQLInputType },
+          }),
+          {} as GraphQLInputFieldConfigMap,
+        ),
+    }),
+  );
 };
 
 const idFilter = `type IDFilter = {

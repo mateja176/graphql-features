@@ -43,6 +43,7 @@ const generateFeature = async (document: DocumentNode) => {
     .reduce<Config>(
       ({ query, mutation }, type) => {
         const outputType = new GraphQLNonNull(type as GraphQLOutputType);
+        const objectType = type as GraphQLObjectType;
 
         const queryName = type.name.toLowerCase();
 
@@ -109,7 +110,7 @@ const generateFeature = async (document: DocumentNode) => {
                 type: outputType,
                 args: {
                   input: {
-                    type: getInputType(`${type.name}CreateInput`)(type),
+                    type: getInputType('CreateInput')(objectType),
                   },
                 },
               },
