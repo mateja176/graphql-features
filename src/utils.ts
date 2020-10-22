@@ -2,6 +2,7 @@
 
 import {
   GraphQLBoolean,
+  GraphQLEnumType,
   GraphQLFieldConfig,
   GraphQLFieldConfigMap,
   GraphQLFloat,
@@ -14,6 +15,7 @@ import {
   GraphQLUnionType,
   isEqualType,
 } from 'graphql';
+import { FieldConfigPairs } from './models';
 
 const idFilter = `type IDFilter = {
   equality: { eq: ID! } | { ne: ID! }
@@ -43,7 +45,7 @@ const scalarStrings = [
   [GraphQLString, stringFilter],
 ] as const;
 export const getFilterTypeString = (typeName: string) => (
-  fieldConfigPairs: Array<[string, GraphQLFieldConfig<unknown, unknown>]>,
+  fieldConfigPairs: FieldConfigPairs,
 ): [string, string] => {
   const filterName = `${typeName}Filter`;
 
@@ -188,7 +190,7 @@ export const scalars = [
   [GraphQLString, StringFilter],
 ] as const;
 export const getFilterType = (typeName: string) => (
-  fieldConfigPairs: Array<[string, GraphQLFieldConfig<unknown, unknown>]>,
+  fieldConfigPairs: FieldConfigPairs,
 ): GraphQLInputType => {
   return (new GraphQLObjectType({
     name: `${typeName}Filter`,
@@ -211,6 +213,30 @@ export const getFilterType = (typeName: string) => (
         (map, [key, filter]) => ({ ...map, [key]: { type: filter } }),
         {} as GraphQLFieldConfigMap<unknown, unknown>,
       ),
+  }) as unknown) as GraphQLInputType;
+};
+
+const SortDirection = new GraphQLNonNull(
+  new GraphQLEnumType({
+    name: 'SortDirection',
+    values: { asc: {}, desc: {} },
+  }),
+);
+
+export const getSortType = (typeName: string) => (
+  fieldConfigPairs: FieldConfigPairs,
+): GraphQLInputType => {
+  return (new GraphQLObjectType({
+    name: `${typeName}Sort`,
+    fields: fieldConfigPairs.reduce(
+      (fields, [key]) => ({
+        ...fields,
+        [key]: {
+          type: SortDirection,
+        },
+      }),
+      {} as GraphQLFieldConfigMap<unknown, unknown>,
+    ),
   }) as unknown) as GraphQLInputType;
 };
 
