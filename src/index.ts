@@ -2,6 +2,7 @@
 
 /* eslint-disable no-console */
 
+import { mergeTypeDefs } from '@graphql-toolkit/schema-merging';
 import commander from 'commander';
 import fs from 'fs-extra';
 import {
@@ -18,7 +19,7 @@ import {
   GraphQLOutputType,
   GraphQLSchema,
   isScalarType,
-  printSchema,
+  print,
 } from 'graphql';
 import { join } from 'path';
 import prettier from 'prettier';
@@ -133,24 +134,20 @@ const generateFeature = async (path: string) => {
       } as Config,
     );
 
-  return printSchema(
-    new GraphQLSchema({
-      query: new GraphQLObjectType(config.query),
-      mutation: new GraphQLObjectType(config.mutation),
-    }),
-  );
+  return new GraphQLSchema({
+    query: new GraphQLObjectType(config.query),
+    mutation: new GraphQLObjectType(config.mutation),
+  });
 };
 
 fs.readdir(typesPath)
-  .then((paths) =>
-    Promise.all(
-      paths.map((path) =>
-        generateFeature(path).then((string) =>
-          prettier.format(string, { parser: 'graphql' }),
-        ),
-      ),
-    ),
-  )
+  .then((paths) => Promise.all(paths.map(generateFeature)))
   .then((schemaDefinitions) => {
-    fs.writeFile(join(process.cwd(), schema), schemaDefinitions[0]);
+    const document = mergeTypeDefs(schemaDefinitions);
+
+    const schemaDefinition = prettier.format(print(document), {
+      parser: 'graphql',
+    });
+
+    fs.writeFile(join(process.cwd(), schema), schemaDefinition);
   });

@@ -21,6 +21,7 @@
   "dependencies": {
     "@graphql-codegen/core": "^1.17.8",
     "@graphql-codegen/plugin-helpers": "^1.17.9",
+    "@graphql-toolkit/schema-merging": "^0.10.7",
     "commander": "^6.1.0",
     "fs-extra": "^9.0.1",
     "graphql": "^15.3.0",
