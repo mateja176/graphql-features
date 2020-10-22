@@ -27,7 +27,7 @@ export const isIdField = (
   config: GraphQLFieldConfig<unknown, unknown>,
 ): boolean => isEqualType(new GraphQLNonNull(GraphQLID), config.type);
 
-export const getCreateInputType = (
+export const getInputType = (name: string) => (
   type: GraphQLNamedType,
 ): GraphQLScalarType | GraphQLNonNull<GraphQLNullableType> => {
   if (isScalarType(type)) {
@@ -36,7 +36,7 @@ export const getCreateInputType = (
     const objectType = type as GraphQLObjectType;
     return new GraphQLNonNull(
       new GraphQLInputObjectType({
-        name: `${objectType.name}CreateInput`,
+        name,
         fields: Object.entries(objectType.toConfig().fields)
           .filter(([, fieldConfig]) => !isIdField(fieldConfig))
           .reduce(

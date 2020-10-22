@@ -26,12 +26,7 @@ import { join } from 'path';
 import prettier from 'prettier';
 import { pipe } from 'ramda';
 import { Config } from './models';
-import {
-  getCreateInputType,
-  getFilterType,
-  getSortType,
-  isIdField,
-} from './utils';
+import { getFilterType, getInputType, getSortType, isIdField } from './utils';
 
 const { types, schema } = commander
   .option('-t, --types <path>', 'Path to directory containing graphql types')
@@ -112,7 +107,11 @@ const generateFeature = async (document: DocumentNode) => {
               ...mutation.fields,
               [`create${type.name}`]: {
                 type: outputType,
-                args: { input: { type: getCreateInputType(type) } },
+                args: {
+                  input: {
+                    type: getInputType(`${type.name}CreateInput`)(type),
+                  },
+                },
               },
               [`update${type.name}`]: {
                 type: outputType,
