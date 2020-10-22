@@ -1,6 +1,7 @@
 /* eslint-disable indent */
 
 import {
+  getNullableType,
   GraphQLBoolean,
   GraphQLEnumType,
   GraphQLFieldConfig,
@@ -18,6 +19,7 @@ import {
   GraphQLString,
   GraphQLUnionType,
   isEqualType,
+  isObjectType,
 } from 'graphql';
 import { FieldConfigPairs } from './models';
 
@@ -33,13 +35,17 @@ export const getInputType = (suffix: string) => (
       name: `${type.name}${suffix}`,
       fields: Object.entries(type.toConfig().fields)
         .filter(([, fieldConfig]) => !isIdField(fieldConfig))
-        .reduce(
-          (map, [key, fieldConfig]) => ({
+        .reduce((map, [key, fieldConfig]) => {
+          const nullableType = getNullableType(fieldConfig.type);
+          return {
             ...map,
-            [key]: { type: fieldConfig.type as GraphQLInputType },
-          }),
-          {} as GraphQLInputFieldConfigMap,
-        ),
+            [key]: {
+              type: (isObjectType(nullableType)
+                ? new GraphQLNonNull(GraphQLID)
+                : fieldConfig.type) as GraphQLInputType,
+            },
+          };
+        }, {} as GraphQLInputFieldConfigMap),
     }),
   );
 };
