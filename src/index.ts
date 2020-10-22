@@ -19,7 +19,7 @@ import {
   GraphQLObjectType,
   GraphQLOutputType,
   GraphQLSchema,
-  isScalarType,
+  isObjectType,
   printSchema,
 } from 'graphql';
 import { join } from 'path';
@@ -39,7 +39,7 @@ const generateFeature = async (document: DocumentNode) => {
   const typeSchema = buildASTSchema(document);
 
   const config = Object.values(typeSchema.getTypeMap())
-    .filter((type) => !isScalarType(type) && !type.name.startsWith('__'))
+    .filter((type) => isObjectType(type) && !type.name.startsWith('__'))
     .reduce<Config>(
       ({ query, mutation }, type) => {
         const outputType = new GraphQLNonNull(type as GraphQLOutputType);
