@@ -5,7 +5,6 @@ import {
   GraphQLBoolean,
   GraphQLEnumType,
   GraphQLFieldConfig,
-  GraphQLFieldConfigMap,
   GraphQLFloat,
   GraphQLID,
   GraphQLInputFieldConfigMap,
@@ -98,7 +97,7 @@ export const getFilterTypeString = (typeName: string) => (
 
   return [
     filterName,
-    `type ${filterName} {
+    `type ${filterName}Input {
   ${fieldConfigPairs
     .map(([key, config]) => {
       const filter = scalarStrings.find(([scalar]) =>
@@ -113,11 +112,11 @@ export const getFilterTypeString = (typeName: string) => (
   ];
 };
 
-const IdFilter = new GraphQLObjectType({
-  name: 'IDFilter',
+const IdFilterInput = new GraphQLInputObjectType({
+  name: 'IDFilterInput',
   fields: {
     equality: {
-      type: new GraphQLUnionType({
+      type: (new GraphQLUnionType({
         name: 'IDEquality',
         types: [
           new GraphQLObjectType({
@@ -129,15 +128,15 @@ const IdFilter = new GraphQLObjectType({
             fields: { ne: { type: new GraphQLNonNull(GraphQLID) } },
           }),
         ],
-      }),
+      }) as unknown) as GraphQLInputType,
     },
   },
 });
-const BooleanFilter = new GraphQLObjectType({
-  name: 'BooleanFilter',
+const BooleanFilterInput = new GraphQLInputObjectType({
+  name: 'BooleanFilterInput',
   fields: {
     equality: {
-      type: new GraphQLUnionType({
+      type: (new GraphQLUnionType({
         name: 'BooleanEquality',
         types: [
           new GraphQLObjectType({
@@ -149,7 +148,7 @@ const BooleanFilter = new GraphQLObjectType({
             fields: { ne: { type: new GraphQLNonNull(GraphQLBoolean) } },
           }),
         ],
-      }),
+      }) as unknown) as GraphQLInputType,
     },
   },
 });
@@ -208,39 +207,45 @@ const getEqualityFilter = (type: 'String' | 'Int' | 'Float') => {
   });
 };
 
-const IntFilter = new GraphQLObjectType({
-  name: 'IntFilter',
+const IntFilterInput = new GraphQLInputObjectType({
+  name: 'IntFilterInput',
   fields: {
-    equality: { type: getEqualityFilter('Int') },
+    equality: {
+      type: (getEqualityFilter('Int') as unknown) as GraphQLInputType,
+    },
   },
 });
-const FloatFilter = new GraphQLObjectType({
-  name: 'FloatFilter',
+const FloatFilterInput = new GraphQLInputObjectType({
+  name: 'FloatFilterInput',
   fields: {
-    equality: { type: getEqualityFilter('Float') },
+    equality: {
+      type: (getEqualityFilter('Float') as unknown) as GraphQLInputType,
+    },
   },
 });
-const StringFilter = new GraphQLObjectType({
-  name: 'StringFilter',
+const StringFilterInput = new GraphQLInputObjectType({
+  name: 'StringFilterInput',
   fields: {
-    equality: { type: getEqualityFilter('String') },
+    equality: {
+      type: (getEqualityFilter('String') as unknown) as GraphQLInputType,
+    },
     contains: { type: GraphQLString },
     notContains: { type: GraphQLString },
     beginsWith: { type: GraphQLString },
   },
 });
 export const scalars = [
-  [GraphQLID, IdFilter],
-  [GraphQLBoolean, BooleanFilter],
-  [GraphQLInt, IntFilter],
-  [GraphQLFloat, FloatFilter],
-  [GraphQLString, StringFilter],
+  [GraphQLID, IdFilterInput],
+  [GraphQLBoolean, BooleanFilterInput],
+  [GraphQLInt, IntFilterInput],
+  [GraphQLFloat, FloatFilterInput],
+  [GraphQLString, StringFilterInput],
 ] as const;
 export const getFilterType = (typeName: string) => (
   fieldConfigPairs: FieldConfigPairs,
 ): GraphQLInputType => {
-  return (new GraphQLObjectType({
-    name: `${typeName}Filter`,
+  return new GraphQLInputObjectType({
+    name: `${typeName}FilterInput`,
     fields: fieldConfigPairs
       .map(
         ([key, config]) =>
@@ -253,14 +258,14 @@ export const getFilterType = (typeName: string) => (
             )?.[1],
           ] as const,
       )
-      .filter((pair): pair is [string, GraphQLObjectType] => {
+      .filter((pair): pair is [string, GraphQLInputObjectType] => {
         return typeof pair[1] !== 'undefined';
       })
       .reduce(
         (map, [key, filter]) => ({ ...map, [key]: { type: filter } }),
-        {} as GraphQLFieldConfigMap<unknown, unknown>,
+        {} as GraphQLInputFieldConfigMap,
       ),
-  }) as unknown) as GraphQLInputType;
+  });
 };
 
 const SortDirection = new GraphQLNonNull(
@@ -273,8 +278,8 @@ const SortDirection = new GraphQLNonNull(
 export const getSortType = (typeName: string) => (
   fieldConfigPairs: FieldConfigPairs,
 ): GraphQLInputType => {
-  return (new GraphQLObjectType({
-    name: `${typeName}Sort`,
+  return new GraphQLInputObjectType({
+    name: `${typeName}SortInput`,
     fields: fieldConfigPairs.reduce(
       (fields, [key]) => ({
         ...fields,
@@ -282,7 +287,7 @@ export const getSortType = (typeName: string) => (
           type: SortDirection,
         },
       }),
-      {} as GraphQLFieldConfigMap<unknown, unknown>,
+      {} as GraphQLInputFieldConfigMap,
     ),
-  }) as unknown) as GraphQLInputType;
+  });
 };
