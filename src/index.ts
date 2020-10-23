@@ -8,11 +8,7 @@ import fs from 'fs-extra';
 import {
   buildASTSchema,
   DocumentNode,
-  getNullableType,
   GraphQLID,
-  GraphQLInputFieldConfigMap,
-  GraphQLInputObjectType,
-  GraphQLInputType,
   GraphQLInt,
   GraphQLList,
   GraphQLNonNull,
@@ -26,7 +22,13 @@ import { join } from 'path';
 import prettier from 'prettier';
 import { pipe } from 'ramda';
 import { Config } from './models';
-import { getFilterType, getInputType, getSortType, isIdField } from './utils';
+import {
+  getCreateInputType,
+  getFilterType,
+  getSortType,
+  getUpdateInputType,
+  isIdField,
+} from './utils';
 
 const { types, schema } = commander
   .option('-t, --types <path>', 'Path to directory containing graphql types')
@@ -64,22 +66,6 @@ const generateFeature = async (document: DocumentNode) => {
           ([, fieldConfig]) => !isIdField(fieldConfig),
         );
 
-        const updateInputType = new GraphQLInputObjectType({
-          name: `Update${type.name}Input`,
-          fields: {
-            [idName]: { type: nonNullIdType },
-            ...fieldConfigPairsWithoutId.reduce(
-              (map, [name, fieldConfig]) => ({
-                ...map,
-                [name]: {
-                  type: getNullableType(fieldConfig.type) as GraphQLInputType,
-                },
-              }),
-              {} as GraphQLInputFieldConfigMap,
-            ),
-          },
-        });
-
         return {
           query: {
             ...query,
@@ -110,14 +96,14 @@ const generateFeature = async (document: DocumentNode) => {
                 type: outputType,
                 args: {
                   input: {
-                    type: getInputType('CreateInput')(objectType),
+                    type: getCreateInputType(objectType),
                   },
                 },
               },
               [`update${type.name}`]: {
                 type: outputType,
                 args: {
-                  input: { type: updateInputType },
+                  input: { type: getUpdateInputType(objectType) },
                 },
               },
               [`delete${type.name}`]: {

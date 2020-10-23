@@ -15,40 +15,54 @@ import {
   GraphQLNonNull,
   GraphQLNullableType,
   GraphQLObjectType,
-  GraphQLScalarType,
+  GraphQLOutputType,
   GraphQLString,
   GraphQLUnionType,
   isEqualType,
+  isNullableType,
   isObjectType,
 } from 'graphql';
+import { identity } from 'ramda';
 import { FieldConfigPairs } from './models';
 
 export const isIdField = (
   config: GraphQLFieldConfig<unknown, unknown>,
 ): boolean => isEqualType(new GraphQLNonNull(GraphQLID), config.type);
 
-export const getInputType = (suffix: string) => (
+export const getScalarOrId = (
+  type: GraphQLOutputType,
+): GraphQLNonNull<GraphQLNullableType> | GraphQLOutputType => {
+  const nullableType = isNullableType(type) ? type : getNullableType(type);
+
+  return isObjectType(nullableType) ? new GraphQLNonNull(GraphQLID) : type;
+};
+
+const getInputType = (
+  mapType: (type: GraphQLOutputType) => GraphQLOutputType,
+) => (suffix: string) => (
   type: GraphQLObjectType,
-): GraphQLScalarType | GraphQLNonNull<GraphQLNullableType> => {
+): GraphQLNonNull<GraphQLNullableType> => {
   return new GraphQLNonNull(
     new GraphQLInputObjectType({
       name: `${type.name}${suffix}`,
       fields: Object.entries(type.toConfig().fields)
         .filter(([, fieldConfig]) => !isIdField(fieldConfig))
         .reduce((map, [key, fieldConfig]) => {
-          const nullableType = getNullableType(fieldConfig.type);
           return {
             ...map,
             [key]: {
-              type: (isObjectType(nullableType)
-                ? new GraphQLNonNull(GraphQLID)
-                : fieldConfig.type) as GraphQLInputType,
+              type: mapType(
+                getScalarOrId(fieldConfig.type),
+              ) as GraphQLInputType,
             },
           };
         }, {} as GraphQLInputFieldConfigMap),
     }),
   );
 };
+
+export const getCreateInputType = getInputType(identity)('CreateInput');
+export const getUpdateInputType = getInputType(getNullableType)('UpdateInput');
 
 const idFilter = `type IDFilter = {
   equality: { eq: ID! } | { ne: ID! }
