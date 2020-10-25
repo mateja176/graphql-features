@@ -94,6 +94,8 @@ const getEqualityFilter = (
     lt: { type: scalar },
     ge: { type: scalar },
     gt: { type: scalar },
+    in: { type: new GraphQLList(scalar) },
+    notIn: { type: new GraphQLList(scalar) },
   };
 };
 
