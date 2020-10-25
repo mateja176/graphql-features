@@ -1,7 +1,5 @@
 #! /usr/bin/env node
 
-/* eslint-disable no-console */
-
 import { mergeTypeDefs } from '@graphql-toolkit/schema-merging';
 import commander from 'commander';
 import fs from 'fs-extra';
