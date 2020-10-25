@@ -63,55 +63,6 @@ const getInputType = (
 export const getCreateInputType = getInputType(identity)('CreateInput');
 export const getUpdateInputType = getInputType(getNullableType)('UpdateInput');
 
-const idFilter = `type IDFilter = {
-  equality: { eq: ID! } | { ne: ID! }
-}`;
-const booleanFilter = `type BooleanFilter = {
-  equality: { eq: Boolean! } | { ne: Boolean! }
-}`;
-const getEqualityFilterString = (type: 'String' | 'Int' | 'Float' | string) =>
-  `{ eq: ${type}! } | { ne: ${type}! } | { le: ${type}! } | { lt: ${type}! } | { ge: ${type}! } | { gt: ${type}! } | { le: ${type}! ge: ${type}! } | { le: ${type}! gt: ${type}! } | { lt: ${type}! ge: ${type}! } | { lt: ${type}! gt: ${type}! } `;
-const intFilter = `type IntFilter = {
-  equality: ${getEqualityFilterString('Int')}
-}`;
-const floatFilter = `type FloatFilter = {
-  equality: ${getEqualityFilterString('Float')}
-}`;
-const stringFilter = `type StringFilter = {
-  equality: ${getEqualityFilterString('String')}
-  contains: String!
-  notContains: String!
-  beginsWith: String!
-}`;
-const scalarStrings = [
-  [GraphQLID, idFilter],
-  [GraphQLBoolean, booleanFilter],
-  [GraphQLInt, intFilter],
-  [GraphQLFloat, floatFilter],
-  [GraphQLString, stringFilter],
-] as const;
-export const getFilterTypeString = (typeName: string) => (
-  fieldConfigPairs: FieldConfigPairs,
-): [string, string] => {
-  const filterName = `${typeName}Filter`;
-
-  return [
-    filterName,
-    `type ${filterName}Input {
-  ${fieldConfigPairs
-    .map(([key, config]) => {
-      const filter = scalarStrings.find(([scalar]) =>
-        isEqualType(config.type, scalar),
-      )?.[1];
-      return [key, filter];
-    })
-    .filter(([, filter]) => !!filter)
-    .map(([key, filter]) => `${key}: ${filter}`)
-    .join('\n')}
-}`,
-  ];
-};
-
 const IdFilterInput = new GraphQLInputObjectType({
   name: 'IDFilterInput',
   fields: {
