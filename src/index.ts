@@ -18,7 +18,6 @@ import {
 } from 'graphql';
 import { join } from 'path';
 import prettier from 'prettier';
-import { pipe } from 'ramda';
 import { Config } from './models';
 import {
   getCreateInputType,
@@ -137,7 +136,9 @@ fs.readdir(typesPath)
     ),
   )
   .then((models) => {
-    return pipe(mergeTypeDefs, generateFeature)(models);
+    const typeDefs = mergeTypeDefs(models);
+
+    return generateFeature(typeDefs);
   })
   .then((schemaDefinition) => {
     const schemaString = printSchema(schemaDefinition);
