@@ -66,15 +66,15 @@ export const getUpdateInputType = getInputType(getNullableType)('UpdateInput');
 const IdFilterInput = new GraphQLInputObjectType({
   name: 'IDFilterInput',
   fields: {
-    eq: { type: new GraphQLNonNull(GraphQLID) },
-    ne: { type: new GraphQLNonNull(GraphQLID) },
+    equals: { type: new GraphQLNonNull(GraphQLID) },
+    not: { type: new GraphQLNonNull(GraphQLID) },
   },
 });
 const BooleanFilterInput = new GraphQLInputObjectType({
   name: 'BooleanFilterInput',
   fields: {
-    eq: { type: new GraphQLNonNull(GraphQLBoolean) },
-    ne: { type: new GraphQLNonNull(GraphQLBoolean) },
+    equals: { type: new GraphQLNonNull(GraphQLBoolean) },
+    not: { type: new GraphQLNonNull(GraphQLBoolean) },
   },
 });
 const getEqualityFilter = (
@@ -88,8 +88,8 @@ const getEqualityFilter = (
       : GraphQLFloat,
   );
   return {
-    eq: { type: scalar },
-    ne: { type: scalar },
+    equals: { type: scalar },
+    not: { type: scalar },
     le: { type: scalar },
     lt: { type: scalar },
     ge: { type: scalar },
