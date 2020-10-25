@@ -122,7 +122,8 @@ const StringFilterInput = new GraphQLInputObjectType({
     },
     contains: { type: GraphQLString },
     notContains: { type: GraphQLString },
-    beginsWith: { type: GraphQLString },
+    startsWith: { type: GraphQLString },
+    endsWith: { type: GraphQLString },
   },
 });
 export const scalars = [
