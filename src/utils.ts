@@ -16,7 +16,6 @@ import {
   GraphQLObjectType,
   GraphQLOutputType,
   GraphQLString,
-  GraphQLUnionType,
   isEqualType,
   isNullableType,
   isObjectType,
@@ -66,41 +65,15 @@ export const getUpdateInputType = getInputType(getNullableType)('UpdateInput');
 const IdFilterInput = new GraphQLInputObjectType({
   name: 'IDFilterInput',
   fields: {
-    equality: {
-      type: (new GraphQLUnionType({
-        name: 'IDEquality',
-        types: [
-          new GraphQLObjectType({
-            name: 'IDEq',
-            fields: { eq: { type: new GraphQLNonNull(GraphQLID) } },
-          }),
-          new GraphQLObjectType({
-            name: 'IDNe',
-            fields: { ne: { type: new GraphQLNonNull(GraphQLID) } },
-          }),
-        ],
-      }) as unknown) as GraphQLInputType,
-    },
+    eq: { type: new GraphQLNonNull(GraphQLID) },
+    ne: { type: new GraphQLNonNull(GraphQLID) },
   },
 });
 const BooleanFilterInput = new GraphQLInputObjectType({
   name: 'BooleanFilterInput',
   fields: {
-    equality: {
-      type: (new GraphQLUnionType({
-        name: 'BooleanEquality',
-        types: [
-          new GraphQLObjectType({
-            name: 'BooleanEq',
-            fields: { eq: { type: new GraphQLNonNull(GraphQLBoolean) } },
-          }),
-          new GraphQLObjectType({
-            name: 'BooleanNe',
-            fields: { ne: { type: new GraphQLNonNull(GraphQLBoolean) } },
-          }),
-        ],
-      }) as unknown) as GraphQLInputType,
-    },
+    eq: { type: new GraphQLNonNull(GraphQLBoolean) },
+    ne: { type: new GraphQLNonNull(GraphQLBoolean) },
   },
 });
 const getEqualityFilter = (type: 'String' | 'Int' | 'Float') => {
@@ -111,50 +84,16 @@ const getEqualityFilter = (type: 'String' | 'Int' | 'Float') => {
       ? GraphQLInt
       : GraphQLFloat,
   );
-  return new GraphQLUnionType({
+  return new GraphQLInputObjectType({
     name: `${type}Equality`,
-    types: [
-      new GraphQLObjectType({
-        name: `${type}Eq`,
-        fields: { eq: { type: scalar } },
-      }),
-      new GraphQLObjectType({
-        name: `${type}Ne`,
-        fields: { ne: { type: scalar } },
-      }),
-      new GraphQLObjectType({
-        name: `${type}Le`,
-        fields: { le: { type: scalar } },
-      }),
-      new GraphQLObjectType({
-        name: `${type}Lt`,
-        fields: { lt: { type: scalar } },
-      }),
-      new GraphQLObjectType({
-        name: `${type}Ge`,
-        fields: { ge: { type: scalar } },
-      }),
-      new GraphQLObjectType({
-        name: `${type}Gt`,
-        fields: { gt: { type: scalar } },
-      }),
-      new GraphQLObjectType({
-        name: `${type}LeGe`,
-        fields: { le: { type: scalar }, ge: { type: scalar } },
-      }),
-      new GraphQLObjectType({
-        name: `${type}LeGt`,
-        fields: { le: { type: scalar }, gt: { type: scalar } },
-      }),
-      new GraphQLObjectType({
-        name: `${type}LtGe`,
-        fields: { lt: { type: scalar }, ge: { type: scalar } },
-      }),
-      new GraphQLObjectType({
-        name: `${type}LtGt`,
-        fields: { lt: { type: scalar }, gt: { type: scalar } },
-      }),
-    ],
+    fields: {
+      eq: { type: scalar },
+      ne: { type: scalar },
+      le: { type: scalar },
+      lt: { type: scalar },
+      ge: { type: scalar },
+      gt: { type: scalar },
+    },
   });
 };
 
@@ -162,7 +101,7 @@ const IntFilterInput = new GraphQLInputObjectType({
   name: 'IntFilterInput',
   fields: {
     equality: {
-      type: (getEqualityFilter('Int') as unknown) as GraphQLInputType,
+      type: getEqualityFilter('Int'),
     },
   },
 });
@@ -170,7 +109,7 @@ const FloatFilterInput = new GraphQLInputObjectType({
   name: 'FloatFilterInput',
   fields: {
     equality: {
-      type: (getEqualityFilter('Float') as unknown) as GraphQLInputType,
+      type: getEqualityFilter('Float'),
     },
   },
 });
@@ -178,7 +117,7 @@ const StringFilterInput = new GraphQLInputObjectType({
   name: 'StringFilterInput',
   fields: {
     equality: {
-      type: (getEqualityFilter('String') as unknown) as GraphQLInputType,
+      type: getEqualityFilter('String'),
     },
     contains: { type: GraphQLString },
     notContains: { type: GraphQLString },
