@@ -11,6 +11,7 @@ import {
   GraphQLInputObjectType,
   GraphQLInputType,
   GraphQLInt,
+  GraphQLList,
   GraphQLNonNull,
   GraphQLNullableType,
   GraphQLObjectType,
@@ -168,16 +169,18 @@ const SortDirection = new GraphQLNonNull(
 export const getSortType = (typeName: string) => (
   fieldConfigPairs: FieldConfigPairs,
 ): GraphQLInputType => {
-  return new GraphQLInputObjectType({
-    name: `${typeName}SortInput`,
-    fields: fieldConfigPairs.reduce(
-      (fields, [key]) => ({
-        ...fields,
-        [key]: {
-          type: SortDirection,
-        },
-      }),
-      {} as GraphQLInputFieldConfigMap,
-    ),
-  });
+  return new GraphQLList(
+    new GraphQLInputObjectType({
+      name: `${typeName}SortInput`,
+      fields: fieldConfigPairs.reduce(
+        (fields, [key]) => ({
+          ...fields,
+          [key]: {
+            type: SortDirection,
+          },
+        }),
+        {} as GraphQLInputFieldConfigMap,
+      ),
+    }),
+  );
 };
