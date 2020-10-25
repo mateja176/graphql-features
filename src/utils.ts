@@ -77,7 +77,9 @@ const BooleanFilterInput = new GraphQLInputObjectType({
     ne: { type: new GraphQLNonNull(GraphQLBoolean) },
   },
 });
-const getEqualityFilter = (type: 'String' | 'Int' | 'Float') => {
+const getEqualityFilter = (
+  type: 'String' | 'Int' | 'Float',
+): GraphQLInputFieldConfigMap => {
   const scalar = new GraphQLNonNull(
     type === 'String'
       ? GraphQLString
@@ -85,41 +87,32 @@ const getEqualityFilter = (type: 'String' | 'Int' | 'Float') => {
       ? GraphQLInt
       : GraphQLFloat,
   );
-  return new GraphQLInputObjectType({
-    name: `${type}Equality`,
-    fields: {
-      eq: { type: scalar },
-      ne: { type: scalar },
-      le: { type: scalar },
-      lt: { type: scalar },
-      ge: { type: scalar },
-      gt: { type: scalar },
-    },
-  });
+  return {
+    eq: { type: scalar },
+    ne: { type: scalar },
+    le: { type: scalar },
+    lt: { type: scalar },
+    ge: { type: scalar },
+    gt: { type: scalar },
+  };
 };
 
 const IntFilterInput = new GraphQLInputObjectType({
   name: 'IntFilterInput',
   fields: {
-    equality: {
-      type: getEqualityFilter('Int'),
-    },
+    ...getEqualityFilter('Int'),
   },
 });
 const FloatFilterInput = new GraphQLInputObjectType({
   name: 'FloatFilterInput',
   fields: {
-    equality: {
-      type: getEqualityFilter('Float'),
-    },
+    ...getEqualityFilter('Float'),
   },
 });
 const StringFilterInput = new GraphQLInputObjectType({
   name: 'StringFilterInput',
   fields: {
-    equality: {
-      type: getEqualityFilter('String'),
-    },
+    ...getEqualityFilter('String'),
     contains: { type: GraphQLString },
     notContains: { type: GraphQLString },
     startsWith: { type: GraphQLString },
