@@ -191,12 +191,10 @@ export const getFilterType = (typeName: string) => (
   });
 };
 
-const SortDirection = new GraphQLNonNull(
-  new GraphQLEnumType({
-    name: 'SortDirection',
-    values: { asc: {}, desc: {} },
-  }),
-);
+const SortDirection = new GraphQLEnumType({
+  name: 'SortDirection',
+  values: { asc: {}, desc: {} },
+});
 
 export const getSortType = (typeName: string) => (
   fieldConfigPairs: FieldConfigPairs,
