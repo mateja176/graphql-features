@@ -28,6 +28,29 @@ export const isIdField = (
   config: GraphQLFieldConfig<unknown, unknown>,
 ): boolean => isEqualType(new GraphQLNonNull(GraphQLID), config.type);
 
+export const getFieldConfigPairs = (
+  type: GraphQLObjectType,
+): FieldConfigPairs => {
+  const fieldConfigMap = type.toConfig().fields;
+
+  return Object.entries(fieldConfigMap);
+};
+export const getIdName = (type: GraphQLObjectType): string => {
+  const fieldConfigPairs = getFieldConfigPairs(type);
+
+  const idConfigPair = fieldConfigPairs.find(([, fieldConfig]) =>
+    isIdField(fieldConfig),
+  );
+
+  if (!idConfigPair) {
+    throw new Error(`Type ${type.name} does not have field of type ID`);
+  }
+
+  const [idName] = idConfigPair;
+
+  return idName;
+};
+
 export const getScalarOrId = (
   type: GraphQLOutputType,
 ): GraphQLNonNull<GraphQLNullableType> | GraphQLOutputType => {
@@ -36,32 +59,43 @@ export const getScalarOrId = (
   return isObjectType(nullableType) ? new GraphQLNonNull(GraphQLID) : type;
 };
 
-const getInputType = (
+const getInputFieldConfigMap = (
   mapType: (type: GraphQLOutputType) => GraphQLOutputType,
-) => (suffix: string) => (
-  type: GraphQLObjectType,
-): GraphQLNonNull<GraphQLNullableType> => {
-  return new GraphQLNonNull(
-    new GraphQLInputObjectType({
-      name: `${type.name}${suffix}`,
-      fields: Object.entries(type.toConfig().fields)
-        .filter(([, fieldConfig]) => !isIdField(fieldConfig))
-        .reduce((map, [key, fieldConfig]) => {
-          return {
-            ...map,
-            [key]: {
-              type: mapType(
-                getScalarOrId(fieldConfig.type),
-              ) as GraphQLInputType,
-            },
-          };
-        }, {} as GraphQLInputFieldConfigMap),
-    }),
-  );
+) => (type: GraphQLObjectType): GraphQLInputFieldConfigMap => {
+  return Object.entries(type.toConfig().fields)
+    .filter(([, fieldConfig]) => !isIdField(fieldConfig))
+    .reduce((map, [key, fieldConfig]) => {
+      return {
+        ...map,
+        [key]: {
+          type: mapType(getScalarOrId(fieldConfig.type)) as GraphQLInputType,
+        },
+      };
+    }, {} as GraphQLInputFieldConfigMap);
 };
 
-export const getCreateInputType = getInputType(identity)('CreateInput');
-export const getUpdateInputType = getInputType(getNullableType)('UpdateInput');
+export const getCreateInputType = (
+  type: GraphQLObjectType,
+): GraphQLNonNull<GraphQLNullableType> =>
+  new GraphQLNonNull(
+    new GraphQLInputObjectType({
+      name: `${type.name}CreateInput`,
+      fields: getInputFieldConfigMap(identity)(type),
+    }),
+  );
+
+export const getUpdateInputType = (
+  type: GraphQLObjectType,
+): GraphQLNonNull<GraphQLNullableType> =>
+  new GraphQLNonNull(
+    new GraphQLInputObjectType({
+      name: `${type.name}UpdateInput`,
+      fields: {
+        [getIdName(type)]: { type: new GraphQLNonNull(GraphQLID) },
+        ...getInputFieldConfigMap(getNullableType)(type),
+      },
+    }),
+  );
 
 const IdFilterInput = new GraphQLInputObjectType({
   name: 'IDFilterInput',

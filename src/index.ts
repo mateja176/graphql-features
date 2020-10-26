@@ -21,7 +21,9 @@ import prettier from 'prettier';
 import { Config } from './models';
 import {
   getCreateInputType,
+  getFieldConfigPairs,
   getFilterType,
+  getIdName,
   getSortType,
   getUpdateInputType,
   isIdField,
@@ -38,27 +40,22 @@ const generateFeature = async (document: DocumentNode) => {
   const typeSchema = buildASTSchema(document);
 
   const config = Object.values(typeSchema.getTypeMap())
-    .filter((type) => isObjectType(type) && !type.name.startsWith('__'))
+    .filter(
+      (type): type is GraphQLObjectType<unknown, unknown> =>
+        isObjectType(type) && !type.name.startsWith('__'),
+    )
     .reduce<Config>(
       ({ query, mutation }, type) => {
         const outputType = new GraphQLNonNull(type as GraphQLOutputType);
-        const objectType = type as GraphQLObjectType;
 
         const queryName = type.name.toLowerCase();
 
         const nonNullIdType = new GraphQLNonNull(GraphQLID);
 
-        const fieldConfigMap = (type as GraphQLObjectType).toConfig().fields;
+        const fieldConfigPairs = getFieldConfigPairs(type);
 
-        const fieldConfigPairs = Object.entries(fieldConfigMap);
+        const idName = getIdName(type);
 
-        const idConfigPair = fieldConfigPairs.find(([, fieldConfig]) =>
-          isIdField(fieldConfig),
-        );
-        if (!idConfigPair) {
-          throw new Error(`Type ${type.name} does not have field of type ID`);
-        }
-        const [idName] = idConfigPair;
         const fieldConfigPairsWithoutId = fieldConfigPairs.filter(
           ([, fieldConfig]) => !isIdField(fieldConfig),
         );
@@ -93,14 +90,14 @@ const generateFeature = async (document: DocumentNode) => {
                 type: outputType,
                 args: {
                   input: {
-                    type: getCreateInputType(objectType),
+                    type: getCreateInputType(type),
                   },
                 },
               },
               [`update${type.name}`]: {
                 type: outputType,
                 args: {
-                  input: { type: getUpdateInputType(objectType) },
+                  input: { type: getUpdateInputType(type) },
                 },
               },
               [`delete${type.name}`]: {
