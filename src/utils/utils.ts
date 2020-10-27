@@ -22,7 +22,7 @@ import {
   isObjectType,
 } from 'graphql';
 import { identity } from 'ramda';
-import { FieldConfigPairs } from './models';
+import { FieldConfigPairs } from '../models';
 
 export const isIdField = (
   config: GraphQLFieldConfig<unknown, unknown>,

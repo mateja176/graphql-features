@@ -27,7 +27,7 @@ import {
   getSortType,
   getUpdateInputType,
   isIdField,
-} from './utils';
+} from './utils/utils';
 
 const { types, schema } = commander
   .option('-t, --types <path>', 'Path to directory containing graphql types')
